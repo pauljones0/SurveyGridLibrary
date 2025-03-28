@@ -87,3 +87,22 @@ lat_long = LatLongCoordinate(latitude=50.0, longitude=-110.0)
 federal_permit = FederalPermitSystemConverter.from_lat_long_coordinates(lat_long)
 print(federal_permit)
 ```
+
+### Running Python Unit Tests
+
+To run the Python unit tests using `unittest`, follow these steps:
+
+1. Navigate to the `UnitTestPython` directory:
+```bash
+cd UnitTestPython
+```
+
+2. Install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the tests:
+```bash
+python -m unittest discover
+```
