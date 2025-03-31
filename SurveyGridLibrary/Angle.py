@@ -61,6 +61,14 @@ class Angle:
             return False
         return math.isclose(self._radians, other._radians, abs_tol=1e-9)
 
+    def __eq__(self, other):
+        if not isinstance(other, Angle):
+            return False
+        return self.equals(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def get_hash_code(self):
         return hash(self._radians)
 
@@ -76,10 +84,11 @@ class Angle:
 
         if format == "DD MM.MMM":
             degrees = int(self.degrees)
-            return f"{degrees} {(self.degrees - degrees) * 60.0:.3f}"
+            minutes = (self.degrees - degrees) * 60.0
+            return f"{degrees:02d} {minutes:06.3f}"
 
         if format == "d":
-            return f"{self.degrees}°"
+            return f"{self.degrees:.0f}°"
 
         if format == "g":
             return f"{self._radians:.6f}"
