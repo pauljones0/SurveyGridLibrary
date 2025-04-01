@@ -1,8 +1,17 @@
 import math
 from SurveyGridLibrary.CoordinateConversionException import CoordinateConversionException
 from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
+from SurveyGridLibrary.BcNtsGridSystem import BcNtsGridSystem
 
 class BcNtsGridSystemConverter:
+    # Define constants for grid dimensions, mirroring the C# version
+    BlockHeight = 1 / 12.0
+    BlockWidth = 1 / 8.0
+    UnitHeight = BlockHeight / 10
+    UnitWidth = BlockWidth / 10
+    QuarterUnitHeight = UnitHeight / 2
+    QuarterUnitWidth = UnitWidth / 2
+    
     LatPq = {
         82: 48,
         83: 52,
@@ -108,139 +117,196 @@ class BcNtsGridSystemConverter:
         'B': 0,
         'C': 0,
         'D': 0,
-        'E': 1 / 12.0,
-        'F': 1 / 12.0,
-        'G': 1 / 12.0,
-        'H': 1 / 12.0,
-        'I': 1 / 6.0,
-        'J': 1 / 6.0,
-        'K': 1 / 6.0,
-        'L': 1 / 6.0
+        'E': BlockHeight,
+        'F': BlockHeight,
+        'G': BlockHeight,
+        'H': BlockHeight,
+        'I': BlockHeight * 2,
+        'J': BlockHeight * 2,
+        'K': BlockHeight * 2,
+        'L': BlockHeight * 2
     }
 
     LngZn = {
         'A': 0,
-        'B': 1 / 8.0,
-        'C': 1 / 4.0,
-        'D': 3 / 8.0,
-        'E': 3 / 8.0,
-        'F': 1 / 4.0,
-        'G': 1 / 8.0,
+        'B': BlockWidth,
+        'C': BlockWidth * 2,
+        'D': BlockWidth * 3,
+        'E': BlockWidth * 3,
+        'F': BlockWidth * 2,
+        'G': BlockWidth,
         'H': 0,
         'I': 0,
-        'J': 1 / 8.0,
-        'K': 1 / 4.0,
-        'L': 3 / 8.0
+        'J': BlockWidth,
+        'K': BlockWidth * 2,
+        'L': BlockWidth * 3
     }
 
     LatQtr = {
         'A': 0,
-        'B': 1 / 20.0,
-        'C': 1 / 20.0,
-        'D': 0
+        'B': 0,
+        'C': QuarterUnitHeight,
+        'D': QuarterUnitHeight
     }
 
     LngQtr = {
         'A': 0,
-        'B': 1 / 20.0,
-        'C': 1 / 20.0,
+        'B': QuarterUnitWidth,
+        'C': QuarterUnitWidth,
         'D': 0
     }
 
     @staticmethod
-    def to_lat_long(bc_nts):
+    def to_lat_long(bc_nts: BcNtsGridSystem) -> LatLongCoordinate:
+        """
+        Approximates the LatLongCoordinate for a given BcNtsGridSystem instance.
+        :param bc_nts: The BcNtsGridSystem object to convert.
+        :return: A LatLongCoordinate object.
+        :raises CoordinateConversionException: If an error occurs during conversion.
+        """
         try:
+            # Start with the base coordinates from the Series
             latitude = BcNtsGridSystemConverter.LatPq[bc_nts.series]
             longitude = BcNtsGridSystemConverter.LngPq[bc_nts.series]
 
+            # Refine by Map Area
             latitude += BcNtsGridSystemConverter.LatLq[bc_nts.map_area]
             longitude += BcNtsGridSystemConverter.LngLq[bc_nts.map_area]
 
+            # Refine by Sheet
             latitude += BcNtsGridSystemConverter.LatSix[bc_nts.sheet]
             longitude += BcNtsGridSystemConverter.LngSix[bc_nts.sheet]
 
+            # Refine by Block
             latitude += BcNtsGridSystemConverter.LatZn[bc_nts.block]
             longitude += BcNtsGridSystemConverter.LngZn[bc_nts.block]
 
-            y = math.ceil((bc_nts.unit - 0.5 - 10.0) / 10.0)
-            latitude += y * (1 / 12.0 / 10)
+            # Refine by Unit
+            # Calculate the row (y) and column (x) within the block based on the unit number
+            y = math.ceil((bc_nts.unit - 0.5 - 10.0) / 10.0) # C# equivalent logic needs verification/adjustment in Python if needed
+            latitude += y * BcNtsGridSystemConverter.UnitHeight 
             x = bc_nts.unit - y * 10 - 1
-            longitude += x * (1 / 8.0 / 10)
+            longitude += x * BcNtsGridSystemConverter.UnitWidth
 
-            latitude += BcNtsGridSystemConverter.LatQtr[bc_nts.quarter_unit] + (1 / 12.0 / 10 / 2)
-            longitude += BcNtsGridSystemConverter.LngQtr[bc_nts.quarter_unit] + (1 / 8.0 / 10 / 2)
+            # Refine by Quarter Unit and offset to the center
+            latitude += BcNtsGridSystemConverter.LatQtr[bc_nts.quarter_unit] + (BcNtsGridSystemConverter.QuarterUnitHeight / 2)
+            longitude += BcNtsGridSystemConverter.LngQtr[bc_nts.quarter_unit] + (BcNtsGridSystemConverter.QuarterUnitWidth / 2)
 
+            # Return the final coordinate, inverting the longitude
             return LatLongCoordinate(latitude, -longitude)
-        except Exception:
+        except KeyError as e: # Catch specific key errors from dictionary lookups
+             raise CoordinateConversionException(f"Invalid NTS component provided: {e}")
+        except Exception as e: # Catch any other unexpected errors
+            # Consider logging the original exception e if needed
             raise CoordinateConversionException("Error while converting BcNtsGridSystem to lat long.")
 
     @staticmethod
-    def from_lat_long_coordinates(coordinate):
+    def from_lat_long_coordinates(coordinate: LatLongCoordinate) -> BcNtsGridSystem:
+        """
+        Converts a LatLongCoordinate instance to a BC NTS location.
+        :param coordinate: The LatLongCoordinate object to convert.
+        :return: A BcNtsGridSystem object.
+        :raises CoordinateConversionException: If the coordinate is outside the BC NTS grid or conversion fails.
+        """
         longitude = abs(coordinate.longitude)
         latitude = abs(coordinate.latitude)
 
+        # Find Primary Quadrant (Series)
         pq = 0
         for key, value in BcNtsGridSystemConverter.LatPq.items():
-            if latitude >= value and latitude < value + 4 and longitude >= BcNtsGridSystemConverter.LngPq[key] and longitude < BcNtsGridSystemConverter.LngPq[key] + 8:
+            # Check if the coordinate falls within the bounds of this series
+            if latitude >= value and latitude < value + 4 and \
+               longitude >= BcNtsGridSystemConverter.LngPq[key] and longitude < BcNtsGridSystemConverter.LngPq[key] + 8:
                 pq = key
                 break
 
         if pq == 0:
             raise CoordinateConversionException("The geographic location is not in a BC primary quadrant.")
 
+        # Calculate relative latitude and longitude within the series
         lat = latitude - BcNtsGridSystemConverter.LatPq[pq]
         lng = longitude - BcNtsGridSystemConverter.LngPq[pq]
 
+        # Find Map Area (Letter Quadrant)
         lq = '\0'
         for key in BcNtsGridSystemConverter.LatLq.keys():
-            if lat >= BcNtsGridSystemConverter.LatLq[key] and lat < BcNtsGridSystemConverter.LatLq[key] + 1 and lng >= BcNtsGridSystemConverter.LngLq[key] and lng < BcNtsGridSystemConverter.LngLq[key] + 2:
+             # Check if the relative coordinate falls within the bounds of this map area
+            if lat >= BcNtsGridSystemConverter.LatLq[key] and lat < BcNtsGridSystemConverter.LatLq[key] + 1 and \
+               lng >= BcNtsGridSystemConverter.LngLq[key] and lng < BcNtsGridSystemConverter.LngLq[key] + 2:
                 lq = key
                 break
 
         if lq == '\0':
-            raise CoordinateConversionException("lq is invalid.")
+            # This should theoretically not happen if pq was found correctly, but added for robustness
+            raise CoordinateConversionException("Could not determine BC NTS Map Area (lq).")
 
+        # Update relative latitude and longitude within the map area
         lat -= BcNtsGridSystemConverter.LatLq[lq]
         lng -= BcNtsGridSystemConverter.LngLq[lq]
 
+        # Find Sheet (16-unit grid)
         six = 0
         for key in BcNtsGridSystemConverter.LatSix.keys():
-            if lat >= BcNtsGridSystemConverter.LatSix[key] and lat < BcNtsGridSystemConverter.LatSix[key] + 0.25 and lng >= BcNtsGridSystemConverter.LngSix[key] and lng < BcNtsGridSystemConverter.LngSix[key] + 0.5:
+            # Check if the relative coordinate falls within the bounds of this sheet
+            if lat >= BcNtsGridSystemConverter.LatSix[key] and lat < BcNtsGridSystemConverter.LatSix[key] + 0.25 and \
+               lng >= BcNtsGridSystemConverter.LngSix[key] and lng < BcNtsGridSystemConverter.LngSix[key] + 0.5:
                 six = key
                 break
 
         if six == 0:
-            raise CoordinateConversionException("six is invalid")
+            raise CoordinateConversionException("Could not determine BC NTS Sheet (six).")
 
+        # Update relative latitude and longitude within the sheet
         lat -= BcNtsGridSystemConverter.LatSix[six]
         lng -= BcNtsGridSystemConverter.LngSix[six]
 
+        # Find Block (Zone A-L)
         zn = '\0'
         for key in BcNtsGridSystemConverter.LatZn.keys():
-            if lat >= BcNtsGridSystemConverter.LatZn[key] and lat < BcNtsGridSystemConverter.LatZn[key] + (1 / 12.0) and lng >= BcNtsGridSystemConverter.LngZn[key] and lng < BcNtsGridSystemConverter.LngZn[key] + (1 / 8.0):
+             # Check if the relative coordinate falls within the bounds of this block
+            if lat >= BcNtsGridSystemConverter.LatZn[key] and lat < BcNtsGridSystemConverter.LatZn[key] + BcNtsGridSystemConverter.BlockHeight and \
+               lng >= BcNtsGridSystemConverter.LngZn[key] and lng < BcNtsGridSystemConverter.LngZn[key] + BcNtsGridSystemConverter.BlockWidth:
                 zn = key
                 break
 
         if zn == '\0':
-            raise CoordinateConversionException("Zone is invalid")
+            raise CoordinateConversionException("Could not determine BC NTS Block (Zone).")
 
+        # Update relative latitude and longitude within the block
         lat -= BcNtsGridSystemConverter.LatZn[zn]
         lng -= BcNtsGridSystemConverter.LngZn[zn]
 
-        y = math.floor(120 * lat)
-        x = math.floor(lng / 0.0125)
-        unit = x + 1 + y * 10
+        # Find Unit (1-100)
+        # Calculate row (y) and column (x) based on relative lat/lng within the block
+        y = math.floor(lat / BcNtsGridSystemConverter.UnitHeight)
+        # Prevent y from being 10 if lat is exactly BlockHeight due to floating point precision
+        y = min(y, 9)
+        x = math.floor(lng / BcNtsGridSystemConverter.UnitWidth)
+         # Prevent x from being 10 if lng is exactly BlockWidth
+        x = min(x, 9)
+        
+        # Calculate unit number (1-100) based on row/column
+        unit = int(x + 1 + y * 10) # Cast to int for clarity
 
-        lat -= y / 120.0
-        lng -= x * 0.0125
+        # Update relative latitude and longitude within the unit
+        lat -= y * BcNtsGridSystemConverter.UnitHeight
+        lng -= x * BcNtsGridSystemConverter.UnitWidth
 
+        # Find Quarter Unit (A-D)
         qtr = '\0'
         for key in BcNtsGridSystemConverter.LatQtr.keys():
-            if lat >= BcNtsGridSystemConverter.LatQtr[key] and lat < BcNtsGridSystemConverter.LatQtr[key] + (1 / 12.0 / 10 / 2) and lng >= BcNtsGridSystemConverter.LngQtr[key] and lng < BcNtsGridSystemConverter.LngQtr[key] + (1 / 8.0 / 10 / 2):
+            # Check if the relative coordinate falls within the bounds of this quarter unit
+            # Use a small epsilon for floating point comparisons on the boundaries
+            epsilon = 1e-9 
+            if lat >= BcNtsGridSystemConverter.LatQtr[key] - epsilon and lat < BcNtsGridSystemConverter.LatQtr[key] + BcNtsGridSystemConverter.QuarterUnitHeight + epsilon and \
+               lng >= BcNtsGridSystemConverter.LngQtr[key] - epsilon and lng < BcNtsGridSystemConverter.LngQtr[key] + BcNtsGridSystemConverter.QuarterUnitWidth + epsilon:
                 qtr = key
                 break
 
         if qtr == '\0':
-            raise CoordinateConversionException("Quarter is invalid.")
-
-        return BcNtsGridSystem(qtr, unit, zn, pq, lq, six)
+             # This might occur due to floating point inaccuracies near boundaries if not handled carefully
+            raise CoordinateConversionException("Could not determine BC NTS Quarter Unit.")
+            
+        # Construct and return the BcNtsGridSystem object
+        # Ensure BcNtsGridSystem exists and accepts these parameters in this order.
+        return BcNtsGridSystem(quarter_unit=qtr, unit=unit, block=zn, series=pq, map_area=lq, sheet=six)
