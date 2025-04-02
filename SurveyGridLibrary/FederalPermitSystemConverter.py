@@ -76,7 +76,9 @@ class FederalPermitSystemConverter:
             lat_decimal = fps.lat_degrees + lat_minutes_total / 60.0
             lon_decimal = -(fps.lon_degrees + lon_minutes_total / 60.0)
 
-            # Assuming LatLongCoordinate takes decimal degrees
+            # Assuming LatLongCoordinate takes decimal degrees (latitude, longitude).
+            # The C# version passed degrees and minutes separately to its constructor.
+            # This implementation calculates the final decimal degrees before construction.
             return LatLongCoordinate(lat_decimal, lon_decimal)
 
         except Exception as e:
