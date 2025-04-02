@@ -29,8 +29,8 @@ class FederalPermitSystem:
         if not ('A' <= unit_upper <= 'P'):
             raise ValueError("Unit must be 'A' through 'P'")
 
-        if not (40 <= lat_degrees < 85): # Note: C# range is 40-85, but SectionCount covers up to 84 implicitly. Upper bound exclusive here.
-             raise ValueError("Latitude degrees must be between 40 and 84.")
+        if not (40 <= lat_degrees <= 85):
+             raise ValueError("Latitude degrees must be between 40 and 85.")
         if lat_minutes not in [0, 10, 20, 30, 40, 50]:
             raise ValueError("Latitude minutes must be in the series [0, 10, 20, 30, 40, 50].")
 
@@ -49,7 +49,7 @@ class FederalPermitSystem:
             raise ValueError(f"Section must be between 1 and {max_section} for latitude {lat_degrees}.")
 
 
-        # Store longitude internally as negative west, matching C#
+        # Store longitude internally as negative west, matching C# behavior for equality/hashing.
         self._lon_degrees = -lon_degrees
 
         self.unit = unit_upper
@@ -73,10 +73,16 @@ class FederalPermitSystem:
         elif (68 <= lat_degrees < 70) or (78 <= lat_degrees < 85): # C# allows 85 here
              return 60
         else:
-             # This case should theoretically not be hit due to constructor validation,
-             # but included for robustness matching C# implicit behaviour if validation was bypassed.
-             # C# returns default 100 if lat doesn't fall in ranges, Python will raise error earlier.
-             raise ValueError(f"Latitude {lat_degrees} is outside the defined ranges for section counts.")
+             # This case handles lat_degrees = 85 explicitly, or other values
+             # outside the typical ranges if validation was bypassed elsewhere.
+             # The C# version implicitly defaults to 100 if no range matches,
+             # but constructor validation (40-85) should prevent hitting this default state
+             # in normal use cases for latitudes outside the specified bands (like 85 itself).
+             # Python's explicit handling here clarifies behavior for edge cases.
+             # For lat_degrees == 85, the C# constructor allowed it, but section_count didn't
+             # have a specific rule. We'll raise an error for consistency with range definitions.
+             # If lat 85 should default to 60 (like the 78-84 range), adjust the elif above.
+             raise ValueError(f"Latitude {lat_degrees} does not fall into a defined section count range (40-84 covered).")
 
 
     def to_lat_long(self):
@@ -105,7 +111,7 @@ class FederalPermitSystem:
 
     def __hash__(self):
         """Calculates the hash code for the FederalPermitSystem object."""
-        # Mimicking the C# XOR hashing approach
+        # Mimicking the C# XOR hashing approach using the internal negative longitude
         return operator.xor(hash(self.lon_minutes),
                operator.xor(hash(self._lon_degrees), # Hash internal negative longitude
                operator.xor(hash(self.lat_minutes),
