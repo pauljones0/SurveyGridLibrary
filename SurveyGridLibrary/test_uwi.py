@@ -1,8 +1,8 @@
 import unittest
-from SurveyGridLibrary.UniqueWellIdentifier import UniqueWellIdentifier, SurveySystemCode
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
-from SurveyGridLibrary.CoordinateConversionException import CoordinateConversionException
-from SurveyGridLibrary.CoordinateParseException import CoordinateParseException
+from UniqueWellIdentifier import UniqueWellIdentifier, SurveySystemCode
+from LatLongCoordinate import LatLongCoordinate
+from CoordinateConversionException import CoordinateConversionException
+from CoordinateParseException import CoordinateParseException
 
 class TestUniqueWellIdentifier(unittest.TestCase):
 

@@ -1,7 +1,7 @@
 import re
-from SurveyGridLibrary.CoordinateParseException import CoordinateParseException
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
-from SurveyGridLibrary.DlsSystemConverter import DlsSystemConverter
+from CoordinateParseException import CoordinateParseException
+from LatLongCoordinate import LatLongCoordinate
+from DlsSystemConverter import DlsSystemConverter
 
 # TODO: Consider using an Enum or constants for ParseOptions for better type safety and clarity, similar to C#.
 # Example:

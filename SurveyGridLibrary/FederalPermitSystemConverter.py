@@ -1,6 +1,6 @@
-from SurveyGridLibrary.CoordinateConversionException import CoordinateConversionException
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
-from SurveyGridLibrary.FederalPermitSystem import FederalPermitSystem
+from CoordinateConversionException import CoordinateConversionException
+from LatLongCoordinate import LatLongCoordinate
+from FederalPermitSystem import FederalPermitSystem
 
 class FederalPermitSystemConverter:
     """

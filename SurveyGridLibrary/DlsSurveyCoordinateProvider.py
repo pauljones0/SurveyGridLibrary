@@ -2,8 +2,8 @@ import gzip
 import struct
 from typing import List, Optional, Dict, Tuple, TypeVar, Type
 
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
-from SurveyGridLibrary.LatLongCorners import LatLongCorners
+from LatLongCoordinate import LatLongCoordinate
+from LatLongCorners import LatLongCorners
 
 # Define a generic type variable for the singleton pattern
 T = TypeVar('T', bound='DlsSurveyCoordinateProvider')

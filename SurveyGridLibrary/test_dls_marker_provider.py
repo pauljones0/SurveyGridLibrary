@@ -1,11 +1,11 @@
 import unittest
-from SurveyGridLibrary.DlsSurveyCoordinateProvider import DlsSurveyCoordinateProvider
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
+from DlsSurveyCoordinateProvider import DlsSurveyCoordinateProvider
+from LatLongCoordinate import LatLongCoordinate
+import time
 
 class TestDlsMarkerProvider(unittest.TestCase):
 
     def test_load_performance(self):
-        import time
         start = time.time()
         provider = DlsSurveyCoordinateProvider()
         self.assertIsNotNone(provider)
@@ -28,31 +28,31 @@ class TestDlsMarkerProvider(unittest.TestCase):
         self.assertIsNotNone(markers)
         self.assertIsNotNone(markers.south_east)
         coordinate = markers.south_east
-        self.assertAlmostEqual(49.000801086426, coordinate.latitude, places=7)
-        self.assertAlmostEqual(-97.459770202637, coordinate.longitude, places=7)
+        self.assertAlmostEqual(49.000801086426, coordinate.latitude, delta=0.0000001)
+        self.assertAlmostEqual(-97.459770202637, coordinate.longitude, delta=0.0000001)
 
     def test_verify_last_marker(self):
         markers = DlsSurveyCoordinateProvider().boundary_markers(36, 78, 15, 6)
         self.assertIsNotNone(markers)
         self.assertIsNotNone(markers.north_east)
         coordinate = markers.north_east
-        self.assertAlmostEqual(55.8103638, coordinate.latitude, places=6)
-        self.assertAlmostEqual(-120.172646, coordinate.longitude, places=6)
+        self.assertAlmostEqual(55.8103638, coordinate.latitude, delta=0.000001)
+        self.assertAlmostEqual(-120.172646, coordinate.longitude, delta=0.000001)
 
     def test_assert_markers_match_known(self):
         markers = DlsSurveyCoordinateProvider().boundary_markers(6, 1, 30, 3)
         self.assertIsNotNone(markers.south_east)
-        self.assertAlmostEqual(48.9997524, markers.south_east.latitude, places=6)
-        self.assertAlmostEqual(-109.991165, markers.south_east.longitude, places=6)
+        self.assertAlmostEqual(48.9997524, markers.south_east.latitude, delta=0.000001)
+        self.assertAlmostEqual(-109.991165, markers.south_east.longitude, delta=0.000001)
         self.assertIsNotNone(markers.south_west)
-        self.assertAlmostEqual(48.99978247, markers.south_west.latitude, places=6)
-        self.assertAlmostEqual(-110.00480669, markers.south_west.longitude, places=6)
+        self.assertAlmostEqual(48.99978247, markers.south_west.latitude, delta=0.000001)
+        self.assertAlmostEqual(-110.00480669, markers.south_west.longitude, delta=0.000001)
         self.assertIsNotNone(markers.north_east)
-        self.assertAlmostEqual(49.014183, markers.north_east.latitude, places=6)
-        self.assertAlmostEqual(-109.9911499, markers.north_east.longitude, places=6)
+        self.assertAlmostEqual(49.014183, markers.north_east.latitude, delta=0.000001)
+        self.assertAlmostEqual(-109.9911499, markers.north_east.longitude, delta=0.000001)
         self.assertIsNotNone(markers.north_west)
-        self.assertAlmostEqual(49.0142335, markers.north_west.latitude, places=6)
-        self.assertAlmostEqual(-110.00480651, markers.north_west.longitude, places=6)
+        self.assertAlmostEqual(49.0142335, markers.north_west.latitude, delta=0.000001)
+        self.assertAlmostEqual(-110.00480651, markers.north_west.longitude, delta=0.000001)
 
     def test_invalid_section_marker(self):
         markers = DlsSurveyCoordinateProvider().boundary_markers(127, 127, 127, 127)

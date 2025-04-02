@@ -1,7 +1,7 @@
 import math
-from SurveyGridLibrary.CoordinateConversionException import CoordinateConversionException
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
-from SurveyGridLibrary.BcNtsGridSystem import BcNtsGridSystem
+from CoordinateConversionException import CoordinateConversionException
+from LatLongCoordinate import LatLongCoordinate
+from BcNtsGridSystem import BcNtsGridSystem
 
 class BcNtsGridSystemConverter:
     # Define constants for grid dimensions, mirroring the C# version

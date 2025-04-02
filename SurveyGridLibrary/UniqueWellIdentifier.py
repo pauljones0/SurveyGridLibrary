@@ -1,10 +1,10 @@
 import re
 from enum import Enum
-from SurveyGridLibrary.CoordinateParseException import CoordinateParseException
-from SurveyGridLibrary.LatLongCoordinate import LatLongCoordinate
-from SurveyGridLibrary.FederalPermitSystem import FederalPermitSystem
-from SurveyGridLibrary.BcNtsGridSystem import BcNtsGridSystem
-from SurveyGridLibrary.DlsSystem import DlsSystem
+from CoordinateParseException import CoordinateParseException
+from LatLongCoordinate import LatLongCoordinate
+from FederalPermitSystem import FederalPermitSystem
+from BcNtsGridSystem import BcNtsGridSystem
+from DlsSystem import DlsSystem
 
 class SurveySystemCode(Enum):
     """
