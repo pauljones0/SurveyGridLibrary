@@ -83,7 +83,8 @@ def process_coordinates():
         # Use gzip.open for writing compressed data directly
         with gzip.open(OUTPUT_GZ_PATH, 'wb', compresslevel=1) as outfile: # compresslevel=1 for fastest
             
-            for row_dict in read_dls_sections(INPUT_CSV_PATH):
+            # Use enumerate to get a row index (starting from 1 for data rows)
+            for row_index, row_dict in enumerate(read_dls_sections(INPUT_CSV_PATH), start=1):
                 try:
                     # --- Data Extraction and Validation ---
                     meridian = safe_int(row_dict.get('Meridian'), 'Meridian')
@@ -158,11 +159,12 @@ def process_coordinates():
                     expected_section_counter += 1
 
                 except (ValueError, TypeError, KeyError) as e:
-                    # Add more context to errors from specific rows
-                    print(f"Error processing row {reader.line_num} (M={row_dict.get('Meridian')}, R={row_dict.get('Range')}, T={row_dict.get('Township')}, S={row_dict.get('Section')}): {e}", file=sys.stderr)
+                    # Add more context to errors from specific rows using the enumerated index
+                    print(f"Error processing data row {row_index} (M={row_dict.get('Meridian')}, R={row_dict.get('Range')}, T={row_dict.get('Township')}, S={row_dict.get('Section')}): {e}", file=sys.stderr)
                     sys.exit(1)
                 except Exception as e: # Catch other unexpected errors
-                    print(f"Unexpected error processing row {reader.line_num}: {e}", file=sys.stderr)
+                    # Use the enumerated index here as well
+                    print(f"Unexpected error processing data row {row_index}: {e}", file=sys.stderr)
                     sys.exit(1)
 
     except IOError as e:
